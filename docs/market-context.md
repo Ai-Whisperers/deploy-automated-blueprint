@@ -1,6 +1,6 @@
 # Market Context: Self-Deploy Rationale
 
-**AI Whisperers Documentation**
+**Self-Deploy Blueprint Documentation**
 
 Why infrastructure sovereignty matters for startups.
 
@@ -80,4 +80,4 @@ The goal is infrastructure that grows with you, not infrastructure you grow into
 
 ---
 
-**Version:** 2.0.0 | **Updated:** December 2025 | **Author:** AI Whisperers
+**Version:** 2.0.0 | **Updated:** December 2025 | **Author:** Community

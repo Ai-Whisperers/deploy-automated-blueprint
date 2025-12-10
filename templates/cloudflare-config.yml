@@ -1,5 +1,8 @@
 # Cloudflare Tunnel Configuration
 # Place at: ~/.cloudflared/config.yml
+#
+# Variables are resolved from environment or .env file
+# Run: envsubst < config.yml > config-resolved.yml
 
 tunnel: ${TUNNEL_ID}
 credentials-file: ~/.cloudflared/${TUNNEL_ID}.json
@@ -7,15 +10,15 @@ credentials-file: ~/.cloudflared/${TUNNEL_ID}.json
 ingress:
   # Primary domain -> Frontend
   - hostname: ${DOMAIN}
-    service: http://localhost:3000
+    service: http://localhost:${PORT_FRONTEND}
 
   # API subdomain (uncomment if needed)
   # - hostname: api.${DOMAIN}
-  #   service: http://localhost:8000
+  #   service: http://localhost:${PORT_API}
 
   # WebSocket support (uncomment if needed)
   # - hostname: ws.${DOMAIN}
-  #   service: http://localhost:3001
+  #   service: http://localhost:${PORT_WEBSOCKET}
   #   originRequest:
   #     noTLSVerify: true
 
