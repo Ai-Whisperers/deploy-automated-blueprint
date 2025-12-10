@@ -1,25 +1,30 @@
 # .claude Directory
 
-Project-specific Claude Code configuration for deploy-automated-blueprint.
+Project-specific Claude Code configuration for the deploy-automated-blueprint repository.
+
+## Purpose
+
+This directory contains instructions for Claude when **working on this blueprint repo itself** - not when using the blueprint in other projects.
 
 ## Contents
 
 ```
 .claude/
-├── CLAUDE.md    # Project instructions for Claude
+├── CLAUDE.md    # Development guidelines for this repo
 └── README.md    # This file
 ```
 
-## Usage
+## Key Distinction
 
-Claude Code automatically reads `CLAUDE.md` when working in this repository.
+| Location | Purpose |
+|----------|---------|
+| `/CLAUDE.md` | The product - handoff document copied to user projects |
+| `/.claude/CLAUDE.md` | Meta-config - how to edit the blueprint itself |
 
-## Root vs .claude CLAUDE.md
+## When Claude Reads What
 
-| File | Purpose |
-|------|---------|
-| `/CLAUDE.md` | Handoff document for end-users (copied to their projects) |
-| `/.claude/CLAUDE.md` | Instructions for working on this blueprint repo |
+- **User copies `/CLAUDE.md` to their project** → Claude follows it to make that project deployable
+- **Developer works on this repo** → Claude reads `/.claude/CLAUDE.md` for contribution guidelines
 
 ---
 
