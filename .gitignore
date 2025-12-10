@@ -1,0 +1,30 @@
+# Environment files (contain secrets)
+.env
+.env.local
+.env.*.local
+
+# Cloudflare credentials
+*.json
+!package.json
+!tsconfig.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Dependencies (if testing locally)
+node_modules/
+__pycache__/
+*.pyc
+venv/
+.venv/

@@ -1,0 +1,23 @@
+# Cloudflare Tunnel Configuration
+# Place at: ~/.cloudflared/config.yml
+
+tunnel: ${TUNNEL_ID}
+credentials-file: ~/.cloudflared/${TUNNEL_ID}.json
+
+ingress:
+  # Primary domain -> Frontend
+  - hostname: ${DOMAIN}
+    service: http://localhost:3000
+
+  # API subdomain (uncomment if needed)
+  # - hostname: api.${DOMAIN}
+  #   service: http://localhost:8000
+
+  # WebSocket support (uncomment if needed)
+  # - hostname: ws.${DOMAIN}
+  #   service: http://localhost:3001
+  #   originRequest:
+  #     noTLSVerify: true
+
+  # Catch-all (required)
+  - service: http_status:404
