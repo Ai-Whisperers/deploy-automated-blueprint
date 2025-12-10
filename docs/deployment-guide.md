@@ -1,6 +1,6 @@
 # Deployment Guide
 
-**AI Whisperers Internal Documentation**
+**Self-Deploy Blueprint Documentation**
 
 Step-by-step guide for deploying products to on-premise infrastructure using Cloudflare Tunnel and WSL2 Docker.
 
@@ -23,14 +23,14 @@ Step-by-step guide for deploying products to on-premise infrastructure using Clo
 
 ### 1.1 Create Subdomain
 
-1. Log in to domain registrar (where `ai-whisperers.org` is registered)
+1. Log in to your domain registrar
 2. Create CNAME record:
-   - **Name:** `product` (e.g., `feedback`, `analytics`)
+   - **Name:** `app` (or `api`, `dashboard`, etc.)
    - **Target:** Configured by Cloudflare Tunnel
 
 ### 1.2 Configure Cloudflare
 
-Set nameservers for `ai-whisperers.org`:
+Set nameservers for your domain:
 ```
 ns1.cloudflare.com
 ns2.cloudflare.com
@@ -38,13 +38,13 @@ ns2.cloudflare.com
 
 Verify:
 ```bash
-nslookup ai-whisperers.org
+nslookup your-domain.com
 ```
 
 ### 1.3 Add Domain to Cloudflare
 
 1. [Cloudflare Dashboard](https://dash.cloudflare.com) > Add site
-2. Enter `ai-whisperers.org`
+2. Enter your domain
 3. Select plan (Free tier works)
 4. Wait for DNS propagation (up to 24 hours)
 
@@ -70,8 +70,8 @@ sudo dpkg -i cloudflared.deb
 
 ```bash
 cloudflared tunnel login
-cloudflared tunnel create product-name
-cloudflared tunnel route dns product-name product.ai-whisperers.org
+cloudflared tunnel create my-app
+cloudflared tunnel route dns my-app app.your-domain.com
 ```
 
 ### 2.3 Configure Tunnel
@@ -82,7 +82,7 @@ tunnel: <TUNNEL_ID>
 credentials-file: ~/.cloudflared/<TUNNEL_ID>.json
 
 ingress:
-  - hostname: product.ai-whisperers.org
+  - hostname: app.your-domain.com
     service: http://localhost:3000
   - service: http_status:404
 ```
@@ -135,16 +135,21 @@ fi
 ### 4.1 Clone and Configure
 
 ```bash
-git clone https://github.com/ai-whisperers/product-name.git
-cd product-name
+git clone https://github.com/your-org/your-project.git
+cd your-project
 cp deploy/env.example .env
 nano .env
 ```
 
 Required variables:
 ```bash
+# API Keys (as needed)
 OPENAI_API_KEY=sk-your-key-here
-CLOUDFLARE_TUNNEL_NAME=product-name
+
+# Cloudflare
+CLOUDFLARE_TUNNEL_NAME=my-app
+
+# Environment
 APP_ENV=production
 NODE_ENV=production
 DEBUG=false
@@ -184,15 +189,15 @@ deploy/start-all.bat   # Windows
 cd api && source venv/bin/activate
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
 
-# Terminal 2: Celery
+# Terminal 2: Celery (if using)
 cd api && source venv/bin/activate
-celery -A app.infrastructure.tasks.celery_app worker --loglevel=info
+celery -A app.tasks worker --loglevel=info
 
 # Terminal 3: Frontend
-cd web && NODE_ENV=production node dist/bff/server.js
+cd web && NODE_ENV=production node dist/server.js
 
 # Terminal 4: Tunnel
-cloudflared tunnel run product-name
+cloudflared tunnel run my-app
 ```
 
 ### 4.5 Verify
@@ -200,7 +205,7 @@ cloudflared tunnel run product-name
 ```bash
 curl http://localhost:8000/health
 curl http://localhost:3000/health
-curl https://product.ai-whisperers.org/health
+curl https://app.your-domain.com/health
 ```
 
 ---
@@ -226,7 +231,7 @@ wsl -d Ubuntu-22.04 -e docker stop redis
 ### Logs
 ```bash
 wsl -d Ubuntu-22.04 -e docker logs redis
-cloudflared tunnel info product-name
+cloudflared tunnel info my-app
 ```
 
 ---
@@ -234,7 +239,7 @@ cloudflared tunnel info product-name
 ## Architecture
 
 ```
-Internet → Cloudflare (HTTPS/443) → cloudflared → Frontend BFF (3000) → API (8000) → Celery/Redis (6379)
+Internet → Cloudflare (HTTPS/443) → cloudflared → Frontend (3000) → API (8000) → Redis (6379)
 ```
 
 ---
@@ -246,7 +251,7 @@ Internet → Cloudflare (HTTPS/443) → cloudflared → Frontend BFF (3000) → 
 | Tunnel not connecting | `cloudflared tunnel list` then `cloudflared tunnel login` |
 | WSL Docker issues | `wsl --shutdown` then restart |
 | Port conflicts | `netstat -ano \| findstr :PORT` then `taskkill /PID <pid> /F` |
-| DNS not resolving | `nslookup product.ai-whisperers.org` to verify propagation |
+| DNS not resolving | `nslookup app.your-domain.com` to verify propagation |
 
 ---
 
@@ -284,4 +289,4 @@ Internet → Cloudflare (HTTPS/443) → cloudflared → Frontend BFF (3000) → 
 
 ---
 
-**Version:** 2.0.0 | **Updated:** December 2025 | **Author:** AI Whisperers DevOps
+**Version:** 2.0.0 | **Updated:** December 2025
