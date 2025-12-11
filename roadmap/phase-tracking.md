@@ -65,13 +65,13 @@
 
 ## Phase 5: Extended Stacks
 
-**Status:** Future
+**Status:** In Progress
 
 | Task | Status | Notes |
 |------|--------|-------|
 | Add `dockerfiles/ruby.Dockerfile` | [ ] | Ruby/Rails |
 | Add `dockerfiles/java.Dockerfile` | [ ] | Java/Spring |
-| Add `dockerfiles/dotnet.Dockerfile` | [ ] | .NET Core |
+| Add `dockerfiles/dotnet.Dockerfile` | [x] | .NET 8+ with AOT, self-contained, trimmed modes |
 | Desktop app patterns | [ ] | Electron/Tauri |
 | Kubernetes detection | [ ] | Defer logic |
 
@@ -85,8 +85,8 @@
 | Phase 2 | 6 | 6 | 100% |
 | Phase 3 | 5 | 5 | 100% |
 | Phase 4 | 5 | 5 | 100% |
-| Phase 5 | 5 | 0 | 0% |
-| **Total** | **28** | **23** | **82%** |
+| Phase 5 | 5 | 1 | 20% |
+| **Total** | **28** | **24** | **86%** |
 
 ---
 
