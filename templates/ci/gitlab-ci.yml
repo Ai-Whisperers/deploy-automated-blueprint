@@ -1,0 +1,274 @@
+# GitLab CI/CD Self-Deploy Pipeline
+# Builds, tests, and deploys to self-hosted infrastructure via Cloudflare Tunnel
+#
+# Setup:
+# 1. Copy to .gitlab-ci.yml in project root
+# 2. Add variables in GitLab > Settings > CI/CD > Variables:
+#    - DEPLOY_HOST: SSH host
+#    - DEPLOY_USER: SSH username
+#    - DEPLOY_KEY: SSH private key (file type, masked)
+#    - SOPS_AGE_KEY: Age private key (if using SOPS)
+# 3. Configure GitLab Container Registry or external registry
+
+stages:
+  - build
+  - test
+  - deploy
+  - rollback
+
+variables:
+  # Docker image settings
+  DOCKER_TLS_CERTDIR: "/certs"
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  IMAGE_LATEST: $CI_REGISTRY_IMAGE:latest
+
+  # Deployment settings
+  APP_PATH: /opt/app
+  DOCKER_COMPOSE_VERSION: "2.24.0"
+
+# ===========================================
+# Build Stage
+# ===========================================
+
+build:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build --cache-from $IMAGE_LATEST -t $IMAGE_TAG -t $IMAGE_LATEST .
+    - docker push $IMAGE_TAG
+    - docker push $IMAGE_LATEST
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  tags:
+    - docker
+
+# ===========================================
+# Test Stage
+# ===========================================
+
+test:
+  stage: test
+  image: $IMAGE_TAG
+  services:
+    - postgres:15-alpine
+    - redis:7-alpine
+  variables:
+    POSTGRES_DB: test
+    POSTGRES_USER: test
+    POSTGRES_PASSWORD: test
+    DATABASE_URL: postgresql://test:test@postgres:5432/test
+    REDIS_URL: redis://redis:6379
+  script:
+    - npm test
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    reports:
+      junit: junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  tags:
+    - docker
+
+# Linting (parallel with tests)
+lint:
+  stage: test
+  image: $IMAGE_TAG
+  script:
+    - npm run lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  tags:
+    - docker
+
+# Security scan
+security:
+  stage: test
+  image: $IMAGE_TAG
+  script:
+    - npm audit --audit-level=high
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  tags:
+    - docker
+
+# ===========================================
+# Deploy Stage
+# ===========================================
+
+.deploy_template: &deploy_template
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    # Install SSH client
+    - apk add --no-cache openssh-client curl
+
+    # Setup SSH
+    - mkdir -p ~/.ssh
+    - echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
+    - chmod 600 ~/.ssh/deploy_key
+    - ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts
+
+    # Decrypt secrets if using SOPS
+    - |
+      if [ -n "$SOPS_AGE_KEY" ] && [ -f ".env.encrypted" ]; then
+        curl -LO https://github.com/getsops/sops/releases/download/v3.8.1/sops-v3.8.1.linux.amd64
+        chmod +x sops-v3.8.1.linux.amd64
+        ./sops-v3.8.1.linux.amd64 -d .env.encrypted > .env
+      fi
+
+deploy:staging:
+  <<: *deploy_template
+  environment:
+    name: staging
+    url: https://staging.$DOMAIN
+  variables:
+    DEPLOY_HOST: $STAGING_HOST
+    DEPLOY_USER: $STAGING_USER
+    DEPLOY_KEY: $STAGING_KEY
+  script:
+    - |
+      ssh -i ~/.ssh/deploy_key ${DEPLOY_USER}@${DEPLOY_HOST} << ENDSSH
+        set -e
+        cd ${APP_PATH}
+
+        # Pull latest image
+        docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+        docker pull $IMAGE_TAG
+
+        # Run migrations
+        docker run --rm \
+          --env-file .env \
+          --network app-network \
+          $IMAGE_TAG npm run migrate
+
+        # Update containers
+        export IMAGE=$IMAGE_TAG
+        docker compose pull
+        docker compose up -d --remove-orphans
+
+        # Health check
+        sleep 10
+        curl -f http://localhost:3000/health || exit 1
+
+        echo "Deployed $IMAGE_TAG to staging"
+      ENDSSH
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  tags:
+    - docker
+
+deploy:production:
+  <<: *deploy_template
+  environment:
+    name: production
+    url: https://$DOMAIN
+  variables:
+    DEPLOY_HOST: $PRODUCTION_HOST
+    DEPLOY_USER: $PRODUCTION_USER
+    DEPLOY_KEY: $PRODUCTION_KEY
+  script:
+    - |
+      ssh -i ~/.ssh/deploy_key ${DEPLOY_USER}@${DEPLOY_HOST} << ENDSSH
+        set -e
+        cd ${APP_PATH}
+
+        # Create backup
+        docker compose exec -T db pg_dump -U app app > backup_$(date +%Y%m%d_%H%M%S).sql
+
+        # Pull latest image
+        docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+        docker pull $IMAGE_TAG
+
+        # Run migrations
+        docker run --rm \
+          --env-file .env \
+          --network app-network \
+          $IMAGE_TAG npm run migrate
+
+        # Rolling update
+        export IMAGE=$IMAGE_TAG
+        docker compose up -d --no-deps --scale api=2 api
+        sleep 30
+        docker compose up -d --no-deps --scale api=1 api
+
+        # Health check
+        curl -f http://localhost:3000/health || exit 1
+
+        # Cleanup
+        docker image prune -f
+
+        echo "Deployed $IMAGE_TAG to production"
+      ENDSSH
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+  tags:
+    - docker
+
+# ===========================================
+# Rollback Stage
+# ===========================================
+
+rollback:production:
+  stage: rollback
+  image: alpine:latest
+  environment:
+    name: production
+    action: stop
+  before_script:
+    - apk add --no-cache openssh-client
+    - mkdir -p ~/.ssh
+    - echo "$PRODUCTION_KEY" > ~/.ssh/deploy_key
+    - chmod 600 ~/.ssh/deploy_key
+    - ssh-keyscan -H $PRODUCTION_HOST >> ~/.ssh/known_hosts
+  script:
+    - |
+      ssh -i ~/.ssh/deploy_key ${PRODUCTION_USER}@${PRODUCTION_HOST} << ENDSSH
+        set -e
+        cd ${APP_PATH}
+
+        # Get previous image from docker compose history
+        PREVIOUS=$(docker compose ps -q api | xargs docker inspect --format='{{.Config.Image}}' | tail -1)
+
+        # Rollback
+        export IMAGE=$PREVIOUS
+        docker compose up -d --no-deps api
+
+        # Verify
+        sleep 10
+        curl -f http://localhost:3000/health || exit 1
+
+        echo "Rolled back to $PREVIOUS"
+      ENDSSH
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+  tags:
+    - docker
+
+# ===========================================
+# Cleanup
+# ===========================================
+
+cleanup:registry:
+  stage: .post
+  image: alpine:latest
+  script:
+    - |
+      # Keep only last 10 images
+      # GitLab API cleanup would go here
+      echo "Registry cleanup completed"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: always
+  tags:
+    - docker

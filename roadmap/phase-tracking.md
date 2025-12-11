@@ -51,15 +51,15 @@
 
 ## Phase 4: CI/CD & Examples
 
-**Status:** Not Started
+**Status:** Complete
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Add `ci/github-actions.yml` | [ ] | GitHub Actions deploy |
-| Add `ci/gitlab-ci.yml` | [ ] | GitLab CI deploy |
-| Create `examples/express-api/` | [ ] | Working Node example |
-| Create `examples/fastapi-app/` | [ ] | Working Python example |
-| Write `docs/troubleshooting.md` | [ ] | Common issues guide |
+| Add `ci/github-actions.yml` | [x] | Build, test, deploy, rollback workflows |
+| Add `ci/gitlab-ci.yml` | [x] | Full pipeline with staging/production |
+| Create `examples/express-api/` | [x] | TypeScript, Prisma, Redis, health checks |
+| Create `examples/fastapi-app/` | [x] | Async SQLAlchemy, Redis, health checks |
+| Write `docs/troubleshooting.md` | [x] | Tunnel, Docker, DB, WSL2, performance |
 
 ---
 
@@ -84,9 +84,9 @@
 | Phase 1 | 7 | 7 | 100% |
 | Phase 2 | 6 | 6 | 100% |
 | Phase 3 | 5 | 5 | 100% |
-| Phase 4 | 5 | 0 | 0% |
+| Phase 4 | 5 | 5 | 100% |
 | Phase 5 | 5 | 0 | 0% |
-| **Total** | **28** | **18** | **64%** |
+| **Total** | **28** | **23** | **82%** |
 
 ---
 
@@ -94,6 +94,7 @@
 
 | Date | Phase | Change |
 |------|-------|--------|
+| 2025-12-10 | 4 | Phase 4 complete: CI/CD pipelines, Express/FastAPI examples, troubleshooting |
 | 2025-12-10 | 3 | Phase 3 complete: DB init scripts, migration patterns, secrets management |
 | 2025-12-10 | 2 | Phase 2 complete: Rust/PHP/static Dockerfiles, Celery/Bull workers, WebSocket config |
 | 2025-12-10 | 1 | Phase 1 complete: supervisord, nginx, health endpoints, port fixes, branding |
