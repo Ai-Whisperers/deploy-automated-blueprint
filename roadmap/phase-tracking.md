@@ -22,16 +22,16 @@
 
 ## Phase 2: Stack Expansion
 
-**Status:** Not Started
+**Status:** Complete
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Add `dockerfiles/rust.Dockerfile` | [ ] | Cargo.toml detection |
-| Add `dockerfiles/php.Dockerfile` | [ ] | PHP-FPM based |
-| Add `dockerfiles/static.Dockerfile` | [ ] | NGINX serving static |
-| Add `workers/celery.py` | [ ] | Python background jobs |
-| Add `workers/bull.js` | [ ] | Node background jobs |
-| Add `cloudflare-websocket.yml` | [ ] | WebSocket tunnel config |
+| Add `dockerfiles/rust.Dockerfile` | [x] | Multi-stage alpine build |
+| Add `dockerfiles/php.Dockerfile` | [x] | PHP-FPM + NGINX + Supervisor |
+| Add `dockerfiles/static.Dockerfile` | [x] | NGINX with SPA routing |
+| Add `workers/celery.py` | [x] | Python background jobs with queues |
+| Add `workers/bull.js` | [x] | Node background jobs with queues |
+| Add `cloudflare-websocket.yml` | [x] | WebSocket tunnel config |
 
 ---
 
@@ -82,11 +82,11 @@
 | Phase | Tasks | Done | Progress |
 |-------|-------|------|----------|
 | Phase 1 | 7 | 7 | 100% |
-| Phase 2 | 6 | 0 | 0% |
+| Phase 2 | 6 | 6 | 100% |
 | Phase 3 | 5 | 0 | 0% |
 | Phase 4 | 5 | 0 | 0% |
 | Phase 5 | 5 | 0 | 0% |
-| **Total** | **28** | **7** | **25%** |
+| **Total** | **28** | **13** | **46%** |
 
 ---
 
@@ -94,5 +94,6 @@
 
 | Date | Phase | Change |
 |------|-------|--------|
+| 2025-12-10 | 2 | Phase 2 complete: Rust/PHP/static Dockerfiles, Celery/Bull workers, WebSocket config |
 | 2025-12-10 | 1 | Phase 1 complete: supervisord, nginx, health endpoints, port fixes, branding |
 | 2025-12-10 | - | Initial tracking document created |

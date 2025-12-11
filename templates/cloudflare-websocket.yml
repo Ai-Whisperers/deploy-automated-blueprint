@@ -1,0 +1,97 @@
+# Cloudflare Tunnel Configuration with WebSocket Support
+# For real-time applications (chat, live updates, gaming, etc.)
+#
+# Place at: ~/.cloudflared/config.yml
+# Run: cloudflared tunnel run ${TUNNEL_NAME}
+#
+# Variables are resolved from environment or .env file
+# Run: envsubst < cloudflare-websocket.yml > config.yml
+
+tunnel: ${TUNNEL_ID}
+credentials-file: ~/.cloudflared/${TUNNEL_ID}.json
+
+# Tunnel settings for WebSocket connections
+originRequest:
+  # Keep WebSocket connections alive longer
+  noTLSVerify: false
+  connectTimeout: 30s
+  tcpKeepAlive: 30s
+
+  # Disable HTTP/2 for WebSocket compatibility (if issues occur)
+  # http2Origin: false
+
+ingress:
+  # ===========================================
+  # WebSocket Service (dedicated subdomain)
+  # ===========================================
+  - hostname: ws.${DOMAIN}
+    service: http://localhost:${PORT_WEBSOCKET}
+    originRequest:
+      # WebSocket-specific settings
+      noTLSVerify: false
+      # Longer timeouts for persistent connections
+      connectTimeout: 60s
+      tcpKeepAlive: 30s
+      # Keep connection alive for 24 hours
+      keepAliveTimeout: 86400s
+      # Disable buffering for real-time data
+      noHappyEyeballs: true
+
+  # ===========================================
+  # Alternative: WebSocket on path (same domain)
+  # ===========================================
+  # Use this if you want /ws or /socket.io on main domain
+  # - hostname: ${DOMAIN}
+  #   path: /ws
+  #   service: http://localhost:${PORT_WEBSOCKET}
+  #   originRequest:
+  #     connectTimeout: 60s
+  #     tcpKeepAlive: 30s
+  #     keepAliveTimeout: 86400s
+
+  # - hostname: ${DOMAIN}
+  #   path: /socket.io
+  #   service: http://localhost:${PORT_WEBSOCKET}
+  #   originRequest:
+  #     connectTimeout: 60s
+  #     tcpKeepAlive: 30s
+  #     keepAliveTimeout: 86400s
+
+  # ===========================================
+  # Frontend (main application)
+  # ===========================================
+  - hostname: ${DOMAIN}
+    service: http://localhost:${PORT_FRONTEND}
+
+  # ===========================================
+  # API Service
+  # ===========================================
+  - hostname: api.${DOMAIN}
+    service: http://localhost:${PORT_API}
+
+  # ===========================================
+  # Catch-all (required)
+  # ===========================================
+  - service: http_status:404
+
+# ===========================================
+# Usage Notes
+# ===========================================
+#
+# Client-side WebSocket connection:
+#   const ws = new WebSocket('wss://ws.your-domain.com');
+#
+# Socket.IO client:
+#   const socket = io('wss://ws.your-domain.com', {
+#     transports: ['websocket'],
+#     upgrade: false
+#   });
+#
+# If using path-based routing:
+#   const ws = new WebSocket('wss://your-domain.com/ws');
+#
+# Troubleshooting:
+# - If connections drop, increase keepAliveTimeout
+# - If handshake fails, check noTLSVerify setting
+# - For Socket.IO, ensure transports: ['websocket']
+# - Check cloudflared logs: cloudflared tunnel info ${TUNNEL_NAME}
