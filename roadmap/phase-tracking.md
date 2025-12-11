@@ -65,15 +65,15 @@
 
 ## Phase 5: Extended Stacks
 
-**Status:** In Progress
+**Status:** Complete
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Add `dockerfiles/ruby.Dockerfile` | [ ] | Ruby/Rails |
-| Add `dockerfiles/java.Dockerfile` | [ ] | Java/Spring |
+| Add `dockerfiles/ruby.Dockerfile` | [x] | Ruby/Rails with Alpine/glibc caveats |
+| Add `dockerfiles/java.Dockerfile` | [x] | Java/Spring with JVM optimization, GraalVM native |
 | Add `dockerfiles/dotnet.Dockerfile` | [x] | .NET 8+ with AOT, self-contained, trimmed modes |
-| Desktop app patterns | [ ] | Electron/Tauri |
-| Kubernetes detection | [ ] | Defer logic |
+| Desktop app patterns | [x] | Electron/Tauri with self-hosted backends |
+| Kubernetes detection | [x] | DEFER/ASK logic in CLAUDE.md |
 
 ---
 
@@ -85,8 +85,8 @@
 | Phase 2 | 6 | 6 | 100% |
 | Phase 3 | 5 | 5 | 100% |
 | Phase 4 | 5 | 5 | 100% |
-| Phase 5 | 5 | 1 | 20% |
-| **Total** | **28** | **24** | **86%** |
+| Phase 5 | 5 | 5 | 100% |
+| **Total** | **28** | **28** | **100%** |
 
 ---
 
@@ -94,6 +94,7 @@
 
 | Date | Phase | Change |
 |------|-------|--------|
+| 2025-12-11 | 5 | Phase 5 complete: Ruby/Java Dockerfiles with OS caveats, desktop patterns, K8s detection |
 | 2025-12-10 | 4 | Phase 4 complete: CI/CD pipelines, Express/FastAPI examples, troubleshooting |
 | 2025-12-10 | 3 | Phase 3 complete: DB init scripts, migration patterns, secrets management |
 | 2025-12-10 | 2 | Phase 2 complete: Rust/PHP/static Dockerfiles, Celery/Bull workers, WebSocket config |

@@ -30,11 +30,70 @@ Scan the codebase for these markers:
 | `requirements.txt` / `pyproject.toml` | Python service |
 | `go.mod` | Go service |
 | `Cargo.toml` | Rust service |
+| `*.csproj` / `*.sln` | .NET service |
+| `Gemfile` | Ruby service |
+| `pom.xml` / `build.gradle` | Java service |
 | `docker-compose.yml` | Existing containerization |
 | `Dockerfile` | Existing container config |
 | `nginx.conf` | Reverse proxy setup |
 | `redis` in dependencies | Cache/queue layer |
 | `celery` / `bull` / `sidekiq` | Background workers |
+
+### 1.2.1 Detect Existing Orchestration (STOP conditions)
+
+**Before proceeding, check for existing infrastructure:**
+
+| File/Directory | Indicates | Action |
+|----------------|-----------|--------|
+| `k8s/`, `kubernetes/`, `manifests/` | Kubernetes configs | DEFER |
+| `helm/`, `Chart.yaml` | Helm charts | DEFER |
+| `kustomization.yaml` | Kustomize | DEFER |
+| `skaffold.yaml` | Skaffold | DEFER |
+| `terraform/`, `*.tf` | Infrastructure as Code | DEFER |
+| `pulumi/`, `Pulumi.yaml` | Pulumi IaC | DEFER |
+| `ansible/`, `playbook.yml` | Ansible automation | DEFER |
+| `.github/workflows/*deploy*` | Existing CI/CD | ENHANCE only |
+| `serverless.yml`, `vercel.json`, `netlify.toml` | Serverless/PaaS | ASK user |
+
+**DEFER Response Template:**
+
+```
+I detected existing [Kubernetes/Helm/Terraform] configuration in your project.
+
+Your project already has infrastructure-as-code that likely:
+- Defines deployment targets
+- Has established CI/CD pipelines
+- May have security/compliance requirements
+
+**Recommended approach:**
+1. Keep your existing orchestration
+2. Add Cloudflare Tunnel as an ingress option (not replacement)
+3. I can help create a tunnel config that integrates with your existing setup
+
+Would you like me to:
+a) Create a Cloudflare Tunnel config that works alongside your existing K8s ingress?
+b) Help troubleshoot your current deployment instead?
+c) Proceed with self-deploy anyway (will create parallel infrastructure)?
+```
+
+**ASK Response Template (for serverless/PaaS):**
+
+```
+I detected [Vercel/Netlify/serverless] configuration.
+
+Your project appears to use managed deployment. Self-deploy would:
+- Replace your current hosting
+- Require you to manage infrastructure
+- Give you full control but more responsibility
+
+Current setup benefits: Zero-ops, auto-scaling, edge deployment
+Self-deploy benefits: No vendor lock-in, cost control, data sovereignty
+
+Would you like to:
+a) Keep current setup (I can help optimize it)
+b) Migrate to self-deploy (I'll guide the transition)
+c) Create hybrid setup (self-hosted API + managed frontend)
+```
 
 ### 1.3 Select Orchestration Level
 
